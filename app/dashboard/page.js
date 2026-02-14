@@ -1,4 +1,5 @@
 "use client";
+
 import { supabase } from "@/utils/supabase";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -17,13 +18,74 @@ export default function Dashboard() {
   const broadcastRef = useRef(null);
   const tabIdRef = useRef(null);
 
-  const postBroadcast = (message) => {
-    try {
-      broadcastRef.current?.postMessage(message);
-    } catch (error) {
-      console.warn("BroadcastChannel postMessage failed:", error);
-    }
-  };
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/");
+        return;
+      }
+      setUser(session.user);
+      fetchBookmarks(session.user.id);
+    };
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push("/");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  return (
+    <div>
+      <h2>Dashboard</h2>
+      <PageCard />
+    </div>
+  );
+}
+
+export function PageCard() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-brand text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+        <p className="mt-2 text-brand-light">
+          Save, search, and sync your links with secure Google sign-in.
+        </p>
+      </div>
+      <div className="bg-brand-dark text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+      </div>
+    </div>
+  );
+}
+
+// Change Page to a named export--------------------------------------------
+export default function Page() {
+  return (
+    <div className="space-y-6">
+      {/* Light mode card */}
+      <div className="bg-brand text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+        <p className="mt-2 text-brand-light">
+          Save, search, and sync your links with secure Google sign-in.
+        </p>
+      </div>
+
+      {/* Dark mode card */}
+      <div className="bg-brand-dark text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+      </div>
+    </div>
+  );
+}
+
+
 
   useEffect(() => {
     // Check authentication
@@ -569,23 +631,5 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-export default function Page() {
-  return (
-    <div className="space-y-6">
-      {/* Light mode card */}
-      <div className="bg-brand text-white p-6 rounded-lg shadow-card">
-        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
-        <p className="mt-2 text-brand-light">
-          Save, search, and sync your links with secure Google sign-in.
-        </p>
-      </div>
 
-      {/* Dark mode card */}
-      <div className="bg-brand-dark text-white p-6 rounded-lg shadow-card">
-        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
-      </div>
-    </div>
-    
-  );
-}
+

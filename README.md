@@ -6,27 +6,14 @@
 </p>
 
 <p align="center">
-  <a href="https://smart-bookmark-app-yourname.vercel.app" target="_blank"><strong>🌐 Live Demo</strong></a>
-  &nbsp; | &nbsp;
-  <a href="https://github.com/Chandramouli/SmartBookmark-App" target="_blank"><strong>📦 GitHub Repository</strong></a>
+  <a href="https://github.com/Chandramouli4/SmartBookmark-App" target="_blank"><strong>📦 GitHub Repository</strong></a>
 </p>
 
 ---
 
-## 🚀 Tech Stack
-- ⚡ Next.js 16 (App Router)
-- 🔐 Supabase Auth (Google OAuth)
-- 🗄 PostgreSQL (Supabase)
-- ⚡ Supabase Realtime Subscriptions
-- 🎨 Tailwind CSS
-- ▲ Vercel Deployment
+## Tech Stack
+- Next.js (App Router)
+- Supabase Auth (Google OAuth)
+- Supabase Realtime Subscriptions
+- Tailwind CSS for basic styling
 
-## ✨ Features
-- 🔐 Secure Google OAuth authentication  
-- 📌 Add and delete bookmarks instantly  
-- ⚡ Real-time synchronization across multiple tabs  
-- 🛡 Strict Row-Level Security (RLS) for user isolation  
-- 📱 Fully responsive UI  
-- 🚀 Production deployment with environment-safe configuration  
-
-## 🏗 Architecture Overview
