@@ -2,21 +2,11 @@
 
 import { supabase } from "@/utils/supabase";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ExternalLink, Search, LogOut, LayoutGrid, List } from "lucide-react";
+import { useEffect, useState } from "react";
 
-export default function Dash_board() {
-  const router = useRouter();
+export default function Dashboard() {
+  const router = useRouter();   // ✅ defined inside the component
   const [user, setUser] = useState(null);
-  const [bookmarks, setBookmarks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const broadcastRef = useRef(null);
-  const tabIdRef = useRef(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -26,7 +16,6 @@ export default function Dash_board() {
         return;
       }
       setUser(session.user);
-      fetchBookmarks(session.user.id);
     };
     checkUser();
 
@@ -49,7 +38,7 @@ export default function Dash_board() {
   );
 }
 
-export function Page_Card() {
+export function PageCard() {
   return (
     <div className="space-y-6">
       <div className="bg-brand text-white p-6 rounded-lg shadow-card">
@@ -66,7 +55,7 @@ export function Page_Card() {
 }
 
 // Change Page to a named export--------------------------------------------
-export default function Page() {
+export function Page() {
   return (
     <div className="space-y-6">
       {/* Light mode card */}
