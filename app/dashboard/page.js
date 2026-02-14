@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, ExternalLink, Search, LogOut, LayoutGrid, List } from "lucide-react";
 
-export default function Dashboard() {
+export default function Dash_board() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
@@ -49,7 +49,7 @@ export default function Dashboard() {
   );
 }
 
-export function PageCard() {
+export function Page_Card() {
   return (
     <div className="space-y-6">
       <div className="bg-brand text-white p-6 rounded-lg shadow-card">
