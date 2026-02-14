@@ -1,9 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class", // enables toggling via a "dark" class
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",   // Scan all files in the app directory
-    "./pages/**/*.{js,ts,jsx,tsx}", // If you add pages later
-    "./components/**/*.{js,ts,jsx,tsx}", // For reusable components
+    "./app/**/*.{js,ts,jsx,tsx}",       // Scan all files in the app directory
+    "./pages/**/*.{js,ts,jsx,tsx}",     // If you add pages later
+    "./components/**/*.{js,ts,jsx,tsx}" // For reusable components
   ],
   theme: {
     extend: {
@@ -23,8 +24,8 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),   // Better form styling
-    require("@tailwindcss/typography"), // For rich text content
-    require("@tailwindcss/aspect-ratio"), // For responsive images/videos
+    require("@tailwindcss/forms"),       // Better form styling
+    require("@tailwindcss/typography"),  // For rich text content
+    require("@tailwindcss/aspect-ratio") // For responsive images/videos
   ],
 };

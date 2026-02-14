@@ -570,4 +570,22 @@ export default function Dashboard() {
     </div>
   );
 }
+export default function Page() {
+  return (
+    <div className="space-y-6">
+      {/* Light mode card */}
+      <div className="bg-brand text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+        <p className="mt-2 text-brand-light">
+          Save, search, and sync your links with secure Google sign-in.
+        </p>
+      </div>
 
+      {/* Dark mode card */}
+      <div className="bg-brand-dark text-white p-6 rounded-lg shadow-card">
+        <h1 className="text-2xl font-bold">Smart Bookmark App</h1>
+      </div>
+    </div>
+    
+  );
+}
