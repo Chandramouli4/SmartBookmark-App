@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global font and background */
+html, body {
+  @apply font-sans bg-gray-50 text-gray-900;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold text-gray-800;
+}
+
+/* Links */
+a {
+  @apply text-brand hover:text-brand-light transition-colors;
+  text-decoration: none;
+}
+
+/* Buttons */
+.btn {
+  @apply px-4 py-2 rounded-md font-medium shadow-card bg-brand text-white hover:bg-brand-dark transition;
+}
+
+/* Card style */
+.card {
+  @apply bg-white shadow-card rounded-lg p-6;
+}
+
+/* Form inputs */
+input, textarea, select {
+  @apply border-gray-300 rounded-md focus:border-brand focus:ring-brand;
+}
+
+/* Utility classes for layout */
+.container {
+  @apply max-w-7xl mx-auto px-4;
+}
+
+.centered {
+  @apply flex items-center justify-center;
+}
