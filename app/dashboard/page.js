@@ -4,7 +4,13 @@ import { supabase } from "@/utils/supabase";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Trash2, ExternalLink, LogOut } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Trash2,
+  ExternalLink,
+  LogOut,
+} from "lucide-react";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -21,15 +27,14 @@ export default function Dashboard() {
   const tabIdRef = useRef(null);
   const broadcastRef = useRef(null);
 
-  // ================= AUTH CHECK =================
+  // ================= AUTH =================
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } =
+        await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/");
+        router.replace("/");
         return;
       }
 
@@ -39,12 +44,11 @@ export default function Dashboard() {
 
     checkUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.push("/");
-      else setUser(session.user);
-    });
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session) router.replace("/");
+        else setUser(session.user);
+      });
 
     return () => subscription.unsubscribe();
   }, [router]);
@@ -60,9 +64,45 @@ export default function Dashboard() {
       .order("created_at", { ascending: false });
 
     if (!error) setBookmarks(data || []);
+    else console.error(error);
 
     setLoading(false);
   };
+
+  // ================= BROADCAST =================
+  const postBroadcast = (message) => {
+    if (!broadcastRef.current) return;
+    broadcastRef.current.postMessage(message);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    tabIdRef.current =
+      globalThis.crypto?.randomUUID?.() ??
+      `tab-${Date.now()}-${Math.random()}`;
+
+    if (typeof window === "undefined") return;
+    if (!window.BroadcastChannel) return;
+
+    const channel = new BroadcastChannel("smart-bookmarks");
+    broadcastRef.current = channel;
+
+    channel.onmessage = (event) => {
+      const message = event?.data;
+      if (!message) return;
+      if (message.tabId === tabIdRef.current) return;
+      if (message.userId !== user.id) return;
+
+      if (message.type === "bookmark_delete") {
+        setBookmarks((current) =>
+          current.filter((b) => b.id !== message.id)
+        );
+      }
+    };
+
+    return () => channel.close();
+  }, [user]);
 
   // ================= REALTIME =================
   useEffect(() => {
@@ -81,7 +121,8 @@ export default function Dashboard() {
         (payload) => {
           if (payload.eventType === "INSERT") {
             setBookmarks((prev) => {
-              if (prev.some((b) => b.id === payload.new.id)) return prev;
+              if (prev.some((b) => b.id === payload.new.id))
+                return prev;
               return [payload.new, ...prev];
             });
           }
@@ -95,40 +136,8 @@ export default function Dashboard() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => supabase.removeChannel(channel);
   }, [user]);
-
-  // ================= MULTI TAB SYNC =================
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!("BroadcastChannel" in window)) return;
-
-    tabIdRef.current =
-      crypto.randomUUID?.() || `tab-${Date.now()}`;
-
-    const channel = new BroadcastChannel("smart-bookmarks");
-    broadcastRef.current = channel;
-
-    channel.onmessage = (event) => {
-      const msg = event.data;
-      if (!msg || msg.tabId === tabIdRef.current) return;
-      if (msg.type === "refresh" && user) {
-        fetchBookmarks(user.id);
-      }
-    };
-
-    return () => channel.close();
-  }, [user]);
-
-  const broadcastRefresh = () => {
-    if (!broadcastRef.current) return;
-    broadcastRef.current.postMessage({
-      type: "refresh",
-      tabId: tabIdRef.current,
-    });
-  };
 
   // ================= ADD =================
   const handleAddBookmark = async (e) => {
@@ -142,15 +151,6 @@ export default function Dashboard() {
       finalUrl = "https://" + finalUrl;
     }
 
-    const optimisticBookmark = {
-      id: "temp-" + Date.now(),
-      title: title.trim(),
-      url: finalUrl,
-      created_at: new Date().toISOString(),
-    };
-
-    setBookmarks((prev) => [optimisticBookmark, ...prev]);
-
     const { data, error } = await supabase
       .from("bookmarks")
       .insert([
@@ -160,16 +160,8 @@ export default function Dashboard() {
       .single();
 
     if (!error) {
-      setBookmarks((prev) =>
-        prev.map((b) =>
-          b.id === optimisticBookmark.id ? data : b
-        )
-      );
-      broadcastRefresh();
+      setBookmarks((prev) => [data, ...prev]);
     } else {
-      setBookmarks((prev) =>
-        prev.filter((b) => b.id !== optimisticBookmark.id)
-      );
       alert(error.message);
     }
 
@@ -180,31 +172,31 @@ export default function Dashboard() {
 
   // ================= DELETE =================
   const handleDeleteBookmark = async (id) => {
-    const prev = bookmarks;
-    setBookmarks((current) =>
-      current.filter((b) => b.id !== id)
-    );
-
     const { error } = await supabase
       .from("bookmarks")
       .delete()
       .eq("id", id);
 
-    if (error) {
-      setBookmarks(prev);
-      alert(error.message);
-    } else {
-      broadcastRefresh();
+    if (!error) {
+      setBookmarks((prev) =>
+        prev.filter((b) => b.id !== id)
+      );
+
+      postBroadcast({
+        type: "bookmark_delete",
+        tabId: tabIdRef.current,
+        userId: user?.id,
+        id,
+      });
     }
   };
 
   // ================= LOGOUT =================
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/");
+    router.replace("/");
   };
 
-  // ================= FILTER =================
   const filteredBookmarks = bookmarks.filter(
     (b) =>
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -212,9 +204,17 @@ export default function Dashboard() {
   );
 
   // ================= UI =================
+  if (loading && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -224,17 +224,15 @@ export default function Dashboard() {
 
           <button
             onClick={handleLogout}
-            className="bg-red-500 px-4 py-2 rounded-lg"
+            className="bg-red-500 px-4 py-2 rounded-lg flex items-center gap-2"
           >
+            <LogOut size={18} />
             Logout
           </button>
         </div>
 
-        {/* Add Form */}
-        <form
-          onSubmit={handleAddBookmark}
-          className="space-y-4 mb-10"
-        >
+        {/* Add */}
+        <form onSubmit={handleAddBookmark} className="space-y-4 mb-8">
           <input
             type="text"
             placeholder="Title"
@@ -243,6 +241,7 @@ export default function Dashboard() {
             className="w-full p-3 rounded bg-gray-800"
             required
           />
+
           <input
             type="url"
             placeholder="URL"
@@ -251,6 +250,7 @@ export default function Dashboard() {
             className="w-full p-3 rounded bg-gray-800"
             required
           />
+
           <button
             type="submit"
             disabled={adding}
@@ -261,52 +261,61 @@ export default function Dashboard() {
         </form>
 
         {/* Search */}
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full mb-6 p-3 rounded bg-gray-800"
-        />
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-3 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 p-3 rounded bg-gray-800"
+          />
+        </div>
 
         {/* List */}
-        {loading ? (
-          <p className="text-gray-400">Loading...</p>
-        ) : (
-          <AnimatePresence>
-            {filteredBookmarks.map((bookmark) => (
-              <motion.div
-                key={bookmark.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-gray-900 p-4 rounded-lg mb-3 flex justify-between items-center"
-              >
-                <div>
-                  <a
-                    href={bookmark.url}
-                    target="_blank"
-                    className="text-blue-400 font-medium"
-                  >
-                    {bookmark.title}
-                  </a>
-                  <p className="text-sm text-gray-500">
-                    {bookmark.url}
-                  </p>
-                </div>
+        <AnimatePresence>
+          {filteredBookmarks.map((bookmark) => (
+            <motion.div
+              key={bookmark.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-gray-900 p-4 rounded-lg mb-3 flex justify-between items-center"
+            >
+              <div>
+                <a
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400"
+                >
+                  {bookmark.title}
+                </a>
+                <p className="text-sm text-gray-500">
+                  {bookmark.url}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <a
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={18} />
+                </a>
 
                 <button
                   onClick={() =>
                     handleDeleteBookmark(bookmark.id)
                   }
-                  className="text-red-400"
                 >
                   <Trash2 size={18} />
                 </button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
